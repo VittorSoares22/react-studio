@@ -1,10 +1,10 @@
 import { BrowserRouter } from 'react-router-dom';
-import LangPicker from './core/LangPicker.jsx';
+import AppRoutes from './routes/index.jsx';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <LangPicker />
+      <AppRoutes />
     </BrowserRouter>
   );
 }

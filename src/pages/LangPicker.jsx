@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { getDefaultRoute } from '../modules/index.js';
+import { getDefaultRoute } from '../routes/paths.ts';
 
 export default function LangPicker() {
   return (
