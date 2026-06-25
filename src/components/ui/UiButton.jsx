@@ -15,6 +15,10 @@ const uiButtonVariants = {
   secondary:
     uiButtonClass +
     ' border-transparent bg-transparent hover:border-transparent hover:bg-surface-hover',
+  nav:
+    'cursor-pointer transition-colors ' +
+    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent/50 focus-visible:outline-offset-1 ' +
+    'disabled:cursor-not-allowed disabled:opacity-45',
 };
 
 const UiButton = forwardRef(function UiButton(
