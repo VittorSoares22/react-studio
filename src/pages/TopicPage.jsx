@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import CodeCapture from '../components/code/CodeCapture.jsx';
-import TopicPageCode from '../components/debug/TopicPageCode.jsx';
+import CodeCapture, { CaptureProvider, useCaptureSources } from '../components/capture/Capture.jsx';
+import CodePanel from '../components/debug/CodePanel.jsx';
 import RiskScenarioNav from '../components/playground/RiskScenarioNav.jsx';
-import { CodeOutputProvider } from '../contexts/CodeOutputContext.jsx';
-import { loadModulePlayground } from '../modules/loadExample.ts';
+import { useScenarioData } from '../modules/useScenarioData.ts';
 import hooks from '../reference/hooks/js/useState/scenarios/index.ts';
 
 function findItem(moduleId, itemId) {
@@ -23,35 +22,14 @@ export default function TopicPage() {
   const match = findItem(moduleId, itemId);
   const scenarios = match?.item?.playground?.scenarios ?? [];
   const topicKey = `${lang}/${moduleId}/${itemId}`;
-  const prevTopicKey = useRef(topicKey);
 
   const [scenarioId, setScenarioId] = useState(scenarios[0]?.id ?? null);
   const [codeVariant, setCodeVariant] = useState('good');
-  const [data, setData] = useState(null);
+  const example = useScenarioData(lang, moduleId, itemId, scenarioId, codeVariant);
 
   useEffect(() => {
-    const topicChanged = prevTopicKey.current !== topicKey;
-    prevTopicKey.current = topicKey;
-
-    if (topicChanged) {
-      setScenarioId(scenarios[0]?.id ?? null);
-      setData(null);
-    }
-
-    const sid = (topicChanged ? scenarios[0]?.id : scenarioId) ?? scenarios[0]?.id;
-
-    let cancelled = false;
-
-    loadModulePlayground(lang, moduleId, itemId, sid).then((result) => {
-      if (cancelled || !result) return;
-      setData(result);
-      setCodeVariant('good');
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [topicKey, scenarioId, scenarios[0]?.id, lang, moduleId, itemId]);
+    setScenarioId(scenarios[0]?.id ?? null);
+  }, [topicKey, scenarios[0]?.id]);
 
   if (!match) {
     return (
@@ -66,7 +44,7 @@ export default function TopicPage() {
   const activeScenario = scenarios.find((s) => s.id === scenarioId) ?? scenarios[0];
 
   return (
-    <CodeOutputProvider key={`${topicKey}-${scenarioId ?? ''}`}>
+    <CaptureProvider key={`${topicKey}-${scenarioId ?? ''}-${codeVariant}`}>
       <article className="mx-auto flex w-full max-w-5xl flex-col gap-10">
         <header className="flex flex-col gap-3 border-b border-border pb-6">
           <p className="m-0 text-sm text-muted">
@@ -102,7 +80,7 @@ export default function TopicPage() {
               variant="good"
               meta={activeScenario.good}
               scenarioLabel={activeScenario.label}
-              example={data?.good ?? null}
+              example={codeVariant === 'good' ? example : null}
               active={codeVariant === 'good'}
               onSelect={() => setCodeVariant('good')}
             />
@@ -110,16 +88,21 @@ export default function TopicPage() {
               variant="bad"
               meta={activeScenario.bad}
               scenarioLabel={activeScenario.label}
-              example={data?.bad ?? null}
+              example={codeVariant === 'bad' ? example : null}
               active={codeVariant === 'bad'}
               onSelect={() => setCodeVariant('bad')}
             />
           </div>
         </section>
-        <TopicPageCode codeVariant={codeVariant} activeScenario={activeScenario} />
+        <CapturePanel codeVariant={codeVariant} />
       </article>
-    </CodeOutputProvider>
+    </CaptureProvider>
   );
+}
+
+function CapturePanel({ codeVariant }) {
+  const sources = useCaptureSources();
+  return <CodePanel key={codeVariant} source={sources[codeVariant] ?? ''} />;
 }
 
 function PlaygroundPanel({ variant, meta, scenarioLabel, example, active, onSelect }) {
@@ -163,9 +146,15 @@ function PlaygroundPanel({ variant, meta, scenarioLabel, example, active, onSele
         <p className="m-0 text-sm leading-snug text-muted">{meta.subtitle}</p>
       </header>
       <div className="min-h-36 flex-1 bg-bg/50 p-4">
-        <CodeCapture variant={variant} source={example?.source ?? ''}>
-          {Example ? <Example /> : <p className="m-0 text-sm text-muted">Carregando…</p>}
-        </CodeCapture>
+        {active ? (
+          <CodeCapture variant={variant} source={example?.source ?? ''}>
+            {Example ? <Example /> : <p className="m-0 text-sm text-muted">Carregando…</p>}
+          </CodeCapture>
+        ) : (
+          <p className="m-0 flex h-full min-h-24 items-center justify-center text-center text-sm text-muted">
+            Clique para visualizar
+          </p>
+        )}
       </div>
     </div>
   );

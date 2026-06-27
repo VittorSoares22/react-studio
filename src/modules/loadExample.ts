@@ -27,7 +27,7 @@ function examplePath(
   return `../reference/${moduleId}/${lang}/${itemId}/${variant}.${ext}`;
 }
 
-async function loadExample(
+export async function loadExample(
   moduleId: string,
   lang: Lang,
   itemId: string,
